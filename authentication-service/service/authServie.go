@@ -25,7 +25,6 @@ func NewAuthService(q *users.Queries, db *sql.DB, tm *token.Manager) *AuthServic
 }
 
 func (a *AuthService) RegisterUser(ctx context.Context, user models.RegisterPayload) error {
-
 	encryptedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), 12)
 	if err != nil {
 		return err
@@ -36,9 +35,21 @@ func (a *AuthService) RegisterUser(ctx context.Context, user models.RegisterPayl
 		Password: string(encryptedPassword),
 	})
 	if err != nil {
-		return nil
+		return err
 	}
 
 	//to do send queue for proccessing registration in other services
 	return nil
+}
+
+func (a *AuthService) LoginUser(ctx context.Context, p models.LoginPayload) (*users.User, error) {
+	user, err := a.userQuries.GetUserByUsername(ctx, p.Username)
+	if err != nil {
+		return nil, err
+	}
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(p.Password))
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
 }

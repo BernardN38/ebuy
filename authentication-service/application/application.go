@@ -58,11 +58,12 @@ func (app *App) runAppSetup(c config) {
 	// init sqlc user queries
 	queries := users.New(db)
 
+	//create jwt manager
 	tm := token.NewManager([]byte(c.jwtSecretKey), c.jwtSigningMethod)
 	authService := service.NewAuthService(queries, db, tm)
 
 	// init request handler
-	h := handler.NewHandler(authService)
+	h := handler.NewHandler(authService, *tm)
 
 	app.srv = &server{
 		router: setupRouter(h),
@@ -79,5 +80,7 @@ func setupRouter(h *handler.Handler) *chi.Mux {
 	router.Get("/api/v1/auth/health", func(writer http.ResponseWriter, request *http.Request) {
 		writer.Write([]byte("Server is up and running"))
 	})
+	router.Post("/api/v1/auth/register", h.RegisterUser)
+	router.Post("/api/v1/auth/login", h.LoginUser)
 	return router
 }

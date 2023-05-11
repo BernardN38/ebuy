@@ -18,3 +18,17 @@ func (c *RegisterPayload) Validate() error {
 	}
 	return nil
 }
+
+type LoginPayload struct {
+	Username string `json:"username" validate:"required"`
+	Password string `json:"password" validate:"required,min=8"`
+}
+
+func (c *LoginPayload) Validate() error {
+	validate := validator.New()
+	err := validate.Struct(c)
+	if err != nil {
+		return err
+	}
+	return nil
+}
