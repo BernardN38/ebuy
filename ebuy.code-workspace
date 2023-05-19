@@ -5,6 +5,9 @@
         },
         {
             "path": "project"
+        },
+        {
+            "path": "product-service"
         }
     ]
 }

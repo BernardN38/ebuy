@@ -11,7 +11,30 @@ services:
       - "8080:8080"
     depends_on:
       - authentication-service
+      - product-service
 
+  minio:
+    image: minio/minio
+    command: server --address ":9000" --console-address ":9001" /data
+    ports:
+      - "9001:9001"
+    environment:
+      MINIO_ACCESS_KEY: minio
+      MINIO_SECRET_KEY: minio123
+    volumes:
+      - ${PWD}/minio-data:/data
+
+  redis:
+    image: "redis:alpine"
+    command: redis-server --requirepass password
+    # ports:
+    #  - "6379:6379"
+    volumes:
+      - $PWD/redis-data:/var/lib/redis
+      - $PWD/redis.conf:/usr/local/etc/redis/redis.conf
+    environment:
+     - REDIS_REPLICATION_MODE=master
+     
   postgres:
     image: postgres:14-alpine
     restart: always
@@ -21,6 +44,7 @@ services:
       - APP_DB_USER=postgres
       - APP_DB_PASS=password
       - AUTH_DB_NAME=authentication_service
+      - PRODUCT_DB_NAME=product_service
     logging:
       options:
         max-size: 10m
@@ -50,5 +74,31 @@ services:
       pgDSN: "user=bernardn password=password host=postgres dbname=authentication_service port=5432 sslmode=disable"
       jwtSecret: "qwertyuiopasdfghjklzxcvbnm123456"
       port: ":8080"
+    depends_on:
+      - postgres
+
+  product-service:
+    build:
+      context: ../product-service
+      dockerfile: ./product-service.dockerfile
+    restart: always
+    deploy:
+      mode: replicated
+      replicas: 1
+      resources:
+            limits:
+              cpus: "1"
+              memory: 1024M
+            reservations:
+              cpus: "0.25"
+              memory: 128M
+    environment:
+      pgDSN: "user=bernardn password=password host=postgres dbname=product_service port=5432 sslmode=disable"
+      jwtSecret: "qwertyuiopasdfghjklzxcvbnm123456"
+      port: ":8080"
+      minioUsername: minio
+      minioPassword: minio123
+    depends_on:
+      - postgres
 
 
